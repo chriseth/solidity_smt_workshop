@@ -1,0 +1,34 @@
+\documentclass{llncs}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{epsfig}
+\usepackage{epstopdf}
+\usepackage{xcolor}
+\usepackage{xspace}
+
+\input{macros}
+
+\begin{document}
+\pagestyle{plain}
+
+\title{Solidity's SMT-based formal verification of Ethereum smart contracts}
+
+\author{Christian Reitwiessner and Leonardo Alt}
+%\institute{ \\
+%\email{leonardoaltt@gmail.com, chris@ethereum.org}
+%}
+\maketitle
+
+\input{abstract}
+\input{introduction}
+\input{ethereum}
+\input{smart_contracts}
+\input{solidity}
+\input{smt_fv}
+\input{conclusions}
+
+\bibliography{main}
+\bibliographystyle{splncs03}
+
+\end{document}
