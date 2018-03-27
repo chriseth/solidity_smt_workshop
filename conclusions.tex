@@ -1,2 +1,10 @@
 \section{Conclusion}
-We conclude that P=NP.
+
+Outlook: Add storage variables which hold their state across function calls.
+This is more complicated, because typically, the smart contract is not designed
+to assume all possible states over its potential lifetime. Therefore, the
+system should be able to restrict the set of possible states by analyzing
+its code.
+
+Apart from these explicit conditions, other conditions like overflows,
+divisions by zero or array access out of bounds (planned) are checkd.
