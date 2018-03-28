@@ -1,1 +1,38 @@
 \section{Smart Contracts}
+
+Due to space constraints, we will only give a very brief description
+of smart contracts on Ethereum and leave out some details.
+
+Programs in Ethereum are called \emph{smart contracts}.
+Each smart contract is stored at its \emph{address} with its \emph{code}
+and a key-value store of data (\emph{storage}). The code is fixed after the creation phase
+and only the smart contract itself can modify the data stored at its address.
+
+Users can interact with a smart contract by sending a \emph{transaction}
+to its address. This cases the smart contract's code to execute inside
+the so-called \emph{Ethereum Virtual Machine} (EVM), which is a stack-based
+256-bit machine with a minimalistic instruction set. Each execution environment
+has a freshly initialized \emph{memory area} (not to be confused with the persisting
+storage). During its execution, a smart contract can also call other
+smart contracts synchronously, which causes their code to be run in
+a new execution environment. Data can be passed and received in calls.
+Furthermore, smart contracts can also create new smart contracts with
+arbitrary code.
+
+We would like to highlight a special feature of the Ethereum Virtual Machine
+which will be essential for the design of the SMT encoding we will use.
+Whenever the EVM encounters an invalid situation (invalid opcode, invalid
+stack access, etc.), execution will not only stop, but all effects on the
+state will be reverted. This reversion takes effect in the current execution
+environment (i.e.\ roughly a function call), and the environment will also
+flag a failure to the calling environment (if present). Typically, high level languages
+will cause an invalid situation whenever a call fails and thus the reversion
+affects the whole transaction.
+
+There is also an explicit opcode that causes the current call to fail, which is
+essentially the same as described above, but as an intended effect.
+
+Very briefly, the SMT encoding assumes that no intended failure happens
+and tries to deduct that no unintended failure can occur. This allows the
+programmer to state preconditions using intended failures and postconditions
+using unintended failures.
