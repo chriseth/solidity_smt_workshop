@@ -1,1 +1,15 @@
 \section{SMT Encoding}
+
+Explain the speciality of Solidity with regards to revert. (perhaps already in the previous section)
+
+Write about how we encode the control flow, what checks we perform (overflow, assert, require, unreachable, trivial condition).
+
+Possible extension: Errors are irrelevant if they will result in a state reversion. So we could change the check to e.g. only flag overflows if they do not result in a state reversion. Popular example, the SafeMath contract:
+
+\begin{verb}
+  function add(uint256 a, uint256 b) internal pure returns (uint256) {
+    uint256 c = a + b;
+    assert(c >= a);
+    return c;
+  }
+\end{verb}
