@@ -1,15 +1,58 @@
 \section{Introduction}
+The Ethereum~\cite{YellowPaper} platform is a system that appears as a
+singleton networked computer usable by anyone, but is actually built as a
+distributed database that utilizes blockchain technology to achieve consensus.
+%
+One of the features that sets Ethereum apart from other blockchain systems is
+the ability to store and execute code inside this database, via the Ethereum
+Virtual Machine (\emph{EVM}).
+%
+In contrast to traditional server systems, anyone can inspect this stored code
+and execute functions.
+%
+Furthermore, blockchains typically store ownership relations of valuable goods
+(for example
+cryptocurrencies).
+%
+Therefore, malicious actors have a monetary incentive to analyze the inner
+workings of such code. Because of that, testing (i.e.  dynamic analysis of some
+typical inputs) does not suffice and analyzing all possible inputs by utilizing
+static analysis or formal verification is recommended.
 
-This is an introduction \cite{Bhargavan2016,Luu2016,Hirai2017}.
-
-Cite other papers in the area.
-
-% F-star: https://hal.inria.fr/hal-01400469/file/solidether.pdf ( http://dx.doi.org/10.1145/2993600.2993611 )
-
-We show how the Solidity compiler utilizes an SMT solver to verify
-conditions that can be specified as part of the source code.
+SAT/SMT-based techniques have been used extensively for program 
+verification~\cite{Biere99,Donaldson11,Komuravelli13,Beyer11,Kroening14,Alt17}.
+%
+This paper shows how the Solidity compiler which generates EVM bytecode
+utilizes an SMT solver and a Bounded Model Checking~\cite{Biere99} approach to
+verify safety properties that can be specified as part of the source code, as
+well as fixed targets such as arithmetic underflow/overflow, and detection of
+unreachable code and trivial conditions.
+%
 The main advantage of this system over others for the user is that they do not
-need to learn a second verification language. The Solidity language has an
-assertion construct that allows to check a condition at run-time.
-The verification component tries to verify that these conditions hold for
-any input.
+need to learn a second verification language or how to use any new tools, since
+verification is part of the compilation process.
+%
+The Solidity language has requirement and assertion constructs that allow to
+filter and check a condition at run-time.  The verification component tries to
+verify that the asserted conditions hold for any input, assuming the given
+requirements.
+
+Section~\ref{section:smart_contracts} introduces the EVM and smart contracts.
+Section~\ref{section:solidity} presents Solidity, the high-level language for smart
+contracts. Section~\ref{section:smt} discusses the translation from Solidity to SMT
+statements and next challenges. Finally, Section~\ref{section:conclusion}
+contains our concluding remarks.
+
+\begin{paragraph}{Related work.}
+Oyente~\cite{Luu2016} and Mythril~\cite{Mythril} are SMT-based symbolic
+execution tools for EVM bytecode that check for specific known vulnerabilities,
+where the former also checks for assertion fails. They simulate the virtual
+machine and execute all possible paths, which takes a performance toll even
+though the approach works well for simple programs.
+%
+Solidity has been translated to the frameworks Why3~\cite{Why3} and
+F*~\cite{Bhargavan2016}, but the former requires learning a new annotation
+specification language and the latter only verifies fixed vulnerability
+patterns and does not verify custom user-provided assertions.
+
+\end{paragraph}
