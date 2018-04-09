@@ -1,9 +1,11 @@
 \section{SMT Encoding}
 \label{section:smt}
 
-Explain the speciality of Solidity with regards to revert. (perhaps already in the previous section)
+\section{Implemented (or almost there)}
 
-Write about how we encode the control flow, what checks we perform (overflow, assert, require, unreachable, trivial condition).
+\todo{Write about how we encode the control flow}\\
+\todo{Write about how we encode types (especially integers)}\\
+\todo{Write about what checks we perform (overflow, assert, require, unreachable, trivial condition)}
 
 Possible extension: Errors are irrelevant if they will result in a state reversion. So we could change the check to e.g. only flag overflows if they do not result in a state reversion. Popular example, the SafeMath contract:
 
@@ -14,3 +16,9 @@ Possible extension: Errors are irrelevant if they will result in a state reversi
     return c;
   \}
 \end{verb}
+
+\section{Discussions about the future}
+
+\todo{Multi-tx state invariants, with an example, maybe a figure}\\
+\todo{Loops?}\\
+\todo{effective callback freeness}
