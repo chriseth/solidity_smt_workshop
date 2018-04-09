@@ -1,13 +1,71 @@
 \section{SMT Encoding}
 \label{section:smt}
 
-\section{Implemented (or almost there)}
+\subsection{Implemented (or almost there)}
 
-\todo{Write about how we encode the control flow}\\
-\todo{Write about how we encode types (especially integers)}\\
-\todo{Write about what checks we perform (overflow, assert, require, unreachable, trivial condition)}
+The SMT encoding is computed in a top-down way traversing the AST of the
+Solidity program.  The context regarding the SMT solver, contract storage, and
+local variables of functions is cleared before each function of a contract is
+visited.
 
-Possible extension: Errors are irrelevant if they will result in a state reversion. So we could change the check to e.g. only flag overflows if they do not result in a state reversion. Popular example, the SafeMath contract:
+Inside each function, a variable declaration leads to a correspondent SMT
+variable that is assigned the default value of the declared type (see
+Sec.~\ref{section:solidity}).
+%
+Function parameters are initialized with a range of valid values for the given
+type, if it applies.  For instance, a parameter \code{uint32 x} is initialized
+as $0 \le x < 2^{32}$ (32 bits), and a parameter \code{address a} is assigned
+the range $0 \le a < 2^{(8*20)}$ (20 bytes).
+%
+The encoding of variable assignment follows the \emph{Single Static Assignment}
+(SSA) where each assignment to a program variable introduces a new SMT variable
+that is assigned to only once.
+%
+The encoder currenty supports \emph{Bool} and the various sizes of
+\emph{Integer} variables.
+
+Because the Solidity code is visited via its AST, we can maintain a stack of
+conditions that lead to the piece of code being analyzed: whenever an
+\emph{if-statement} is visited its condition is pushed onto the stack, the
+branch's body is encoded and the condition is popped again.
+%
+Similarly, the negation of the condition is pushed onto the stack when visiting
+the \emph{else} branch, and popped afterwards.
+%
+Control flow is then encoded using the \emph{if-then-else} operator (ite) as
+the SSA $\phi$ function, with the head of the stack as the condition of the
+if-then-else expression.
+%
+Figure~\ref{figure:control_flow} shows the SMT encoding of a Solidity program
+with emphasis on the control flow handling.
+
+Every arithmetic operation is checked against underflow and overflow according
+to the type of the values, and an example is given if there is an underflow or
+overflow.
+%
+We also check if branch conditions are constant, warning the user about
+unreachable blocks or trivial conditions.
+%
+A \code{require}'s condition is checked for triviality and reachability.
+%
+This is important since \code{require} conditions are meant to be used as
+filters for unwanted input values when they are unknown, for example, in public
+functions.
+%
+Therefore they act like preconditions for the rest of the scope, implied by the
+conjunction of the conditions from the conditions stack.
+%
+Finally, \code{assert} conditions represent target postconditions that the
+Solidity programmer wants to ensure at runtime and are verified statically.
+%
+If it is possible to disprove the assertion, the user is given a
+counterexample.
+
+It is important to highlight that errors are irrelevant if they result in a
+state reversion (Sec.~\ref{section:smart_contracts}). The user is warned
+about checks such as overflow only if they do not result in a state reversion.
+%
+One popular example is the SafeMath~\cite{SafeMath} contract:
 
 \begin{verb}
   function add(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -17,7 +75,37 @@ Possible extension: Errors are irrelevant if they will result in a state reversi
   \}
 \end{verb}
 
-\section{Discussions about the future}
+Although the tool sees an overflow in the computation of \code{a + b}, since
+both have type $uint256$ which is the largest integer, any execution that
+containts the overflow reverts due to the \code{assert}.
+%
+In this case the user is not warned of the error, since no erroneous cases
+exist in accepted executions.
+
+As described above, the component performs several local checks during a single
+run, therefore it is critical that the used SMT solver has support to
+incremental checking.
+%
+Moreover, we do not abstract difficult operations such as multiplication
+between variables, rather trying to give precise answers when possible.
+%
+Therefore we combine various quantifier-free theories, such as Linear
+Arithmetics, Uninterpreted Functions and Nonlinear Arithmetics. 
+%
+Solidity has integrated Z3~\cite{Z3} and CVC4~\cite{CVC4} via their C++ APIs.
+%
+The two SMT solvers are used together to increase solving power.
+%
+This has been important especially for the programs that require Nonlinear
+reasoning, since often one solver is able to prove a property that the other
+cannot.
+%
+In case both Z3 and CVC4's APIs are not available but binaries are, the
+component generates \code{smtlib2}~\cite{SMTLIB} formulas and invokes the
+solver binaries.
+
+
+\subsection{Discussions about the future}
 
 \todo{Multi-tx state invariants, with an example, maybe a figure}\\
 \todo{Loops?}\\
