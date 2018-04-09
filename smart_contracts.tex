@@ -1,8 +1,8 @@
 \section{Smart Contracts}
 \label{section:smart_contracts}
 
-Due to space constraints, we will only give a very brief description
-of smart contracts on Ethereum and leave out some details.
+%Due to space constraints, we will only give a very brief description
+%of smart contracts on Ethereum and leave out some details.
 
 Programs in Ethereum are called \emph{smart contracts}.
 Each smart contract is stored at its \emph{address} with its \emph{code}
@@ -20,8 +20,10 @@ a new execution environment. Data can be passed and received in calls.
 Furthermore, smart contracts can also create new smart contracts with
 arbitrary code.
 
+\todo{Talk about gas?}
+
 We would like to highlight a special feature of the Ethereum Virtual Machine
-which will be essential for the design of the SMT encoding we will use.
+that makes the control-flow analysis different from other languages.
 Whenever the EVM encounters an invalid situation (invalid opcode, invalid
 stack access, etc.), execution will not only stop, but all effects on the
 state will be reverted. This reversion takes effect in the current execution
@@ -32,6 +34,8 @@ affects the whole transaction.
 
 There is also an explicit opcode that causes the current call to fail, which is
 essentially the same as described above, but as an intended effect.
+
+\todo{Talk about ``all paths that fail eventually revert"}
 
 Very briefly, the SMT encoding assumes that no intended failure happens
 and tries to deduct that no unintended failure can occur. This allows the
