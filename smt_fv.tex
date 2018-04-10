@@ -84,8 +84,9 @@ encoding with emphasis on the control flow handling while verifying an assertion
 Since the variables \code{uint256 a} and \code{uint256 b} are function parameters, they
 are initialized with the valid range of values for their type (\code{uint256}).
 %
-The \code{require} condition about \code{b} should only be taken into account
-if \code{a = 0}, which is expressed in the logical implication. \todo{C: I do
+If \code{a = 0}, the \code{require} condition about \code{b} is used as a
+precondition when verifying the assertion in the end of the function.
+\todo{C: I do
 not understand this; L: maybe better now?}.
 %
 The next two assignments to \code{b} create the new SSA variables
