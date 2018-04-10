@@ -38,7 +38,7 @@ The encoding of variable assignment follows the \emph{Single Static Assignment}
 (SSA) where each assignment to a program variable introduces a new SMT variable
 that is assigned to only once.
 %
-The encoder currenty supports \emph{Bool} and the various sizes of
+The encoder currently supports \emph{Bool} and the various sizes of
 \emph{Integer} variables.
 
 Because the Solidity code is visited via its AST, we can maintain a stack of
@@ -228,4 +228,4 @@ This is a powerful property, since it means that any invariant computed for a
 contract's state variables still holds even after calling external contracts
 with unknown behavior.
 %
-We intend to study how to integrate this approch to our static analysis.
+We intend to study how to integrate this approach to our static analysis.
