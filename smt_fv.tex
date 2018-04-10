@@ -1,8 +1,6 @@
 \section{SMT Encoding}
 \label{section:smt}
 
-\subsection{Implemented (or almost there)}
-
 \todo{the transition from the previous section to
 this one is a little rough. Why do we SMT-encode and what
 do we encode?}
@@ -160,8 +158,50 @@ component generates \code{smtlib2}~\cite{SMTLIB} formulas and invokes the
 solver binaries.
 
 
-\subsection{Discussions about the future}
+\subsection{Future plans}
 
-\todo{Multi-tx state invariants, with an example, maybe a figure}\\
-\todo{Loops?}\\
-\todo{effective callback freeness}
+Our current implementation plans for the component involve supporting
+a larger subset of the language, including more complex data structures
+such as \code{mapping}.
+%
+We intend to build the component as a Bounded Model Checker, unrolling loops
+up to a constant bound and automatically detecting bounds when possible.
+%
+This feature is currently being implemented.
+
+One of the most interesting aspects we intend to research and support is
+multi-transaction invariants.
+%
+The ultimate goal is to compute invariants for state variables (resident in the
+contract's storage) considering any arbitrary number of calls to the contract.
+%
+This would enable these invariants to be used as preconditions whenever they
+are accessed.
+%
+As an example, take contract \code{Token} from Sec.~\ref{section:solidity}.
+%
+We can see from the constructor that the deployer of the contract receives
+10000 tokens.
+%
+The only way to move tokens is via function \code{transfer}, which decreases a
+certain amount of tokens from one account, if it owns enough, and increases the
+same amount in another account.
+%
+As we can see, the number of total tokens never changes and the invariant
+$\sum_{a \in balances} balances[a] = 10000$ holds in the beginning of any
+function of the contract.
+
+The idea of \emph{Effective Callback Freeness} was recently introduced by
+\cite{Grossman}.
+%
+A smart contract $C$ is free of callbacks if any external call to another
+contract cannot eventually affect $C's$ storage.
+%
+The authors show that most of the contracts deployed on Ethereum have this
+property.
+%
+This is a powerful property, since it means that any invariant computed for a
+contract's state variables still holds even after calling external contracts
+with unknown behavior.
+%
+We intend to study how to integrate this approch to our static analysis.
