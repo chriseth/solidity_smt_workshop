@@ -79,6 +79,7 @@ are just checked for triviality and reachability.
 %
 
 Figure~\ref{figure:solidity_encoding_1} shows a Solidity sample and its SMT
+\todo{actually there is not only a single encoding}
 encoding with emphasis on the control flow handling while verifying an assertion.
 %
 Since the variables \code{uint256 a} and \code{uint256 b} are function parameters, they
@@ -134,28 +135,33 @@ $\neg b_4 \le 100000$
 \end{figure}
 
 It is important to highlight that errors are irrelevant if they result in a
-state reversion (Sec.~\ref{section:smart_contracts}). The user is warned
+state change reversion (Sec.~\ref{section:smart_contracts}). The user is warned
 about checks such as overflow only if they do not result in a state reversion.
 %
-One popular example is the SafeMath~\cite{SafeMath} contract:
+One popular example is the SafeMath~\cite{SafeMath} contract which
+is commonly used to turn wrapping arithmetics into overflow-checked arithmetics:
 
 \begin{verbatim}
-  function add(uint256 a, uint256 b) internal pure returns (uint256) {
+  function add(uint256 a, uint256 b) internal pure
+        returns (uint256) {
     uint256 c = a + b;
-    assert(c >= a);
+    require(c >= a);
     return c;
   }
 \end{verbatim}
 
-Although the tool sees an overflow in the computation of \code{a + b}, since
-both have type \code{uint256} which is the largest integer, any execution that
-containts the overflow reverts due to the \code{assert}.
+Although the tool detects an overflow in the computation of \code{a + b},
+the overflow will result in a truncation of \code{c} in two's complement and thus
+any execution that contains the overflow will revert at the \code{require}.
 %
 In this case the user is not warned of the error, since no erroneous cases
 exist in accepted executions.
 
+\todo{Shall we talk about that it is an open problem how this is best
+displayed / communicated to the user?}
+
 As described above, the component performs several local checks during a single
-run, therefore it is critical that the used SMT solver has support to
+run, therefore it is critical that the used SMT solver supports
 incremental checking.
 %
 Moreover, we do not abstract difficult operations such as multiplication
@@ -172,9 +178,8 @@ This has been important especially for the programs that require Nonlinear
 reasoning, since often one solver is able to prove a property that the other
 cannot.
 %
-In case both Z3 and CVC4's APIs are not available but binaries are, the
-component generates \code{smtlib2}~\cite{SMTLIB} formulas and invokes the
-solver binaries.
+The component is also able to generate \code{smtlib2}~\cite{SMTLIB}
+formulas in order to interface with additional solvers.
 
 
 \subsection{Future plans}
