@@ -1,9 +1,24 @@
-\section{SMT Encoding}
+\section{SMT-based Solidity verification}
 \label{section:smt}
+
+SMT solvers are powerful tools to prove satisfiability of formulas in different
+logics which often have the necessary expressiveness to model software in a
+straightforward manner~\cite{Komuravelli13,Alt17,Donaldson11,Beyer11}.
+
+We translate Solidity contracts and their functions into SMT formulas using a
+combination of different quantifier-free theories.
+%
+We shall name the translated formulas the \emph{SMT encoding} of the Solidity
+program.
+%
+The goal of the translation from Solidity to SMT formulas is to verify safety
+properties from the Solidity program by performing queries to the SMT solver.
 
 \todo{the transition from the previous section to
 this one is a little rough. Why do we SMT-encode and what
-do we encode?}
+do we encode? ; L: added text above}
+
+\subsection{SMT encoding}
 
 The SMT encoding is computed in a top-down way traversing the AST of the
 Solidity program and roughly following the execution order.
@@ -69,8 +84,9 @@ encoding with emphasis on the control flow handling while verifying an assertion
 Since the variables \code{uint256 a} and \code{uint256 b} are function parameters, they
 are initialized with the valid range of values for their type (\code{uint256}).
 %
-The requirement condition about \code{b} is only true if the first condition
-about \code{a} is true \todo{C: I do not understand this}.
+The \code{require} condition about \code{b} should only be taken into account
+if \code{a = 0}, which is expressed in the logical implication. \todo{C: I do
+not understand this; L: maybe better now?}.
 %
 The next two assignments to \code{b} create the new SSA variables
 $b_1$ and $b_2$.
@@ -91,7 +107,8 @@ We can see that the target assertion is safe within its function.
 \begin{verbatim}
 contract C
 {
-  function f(uint256 a, uint256 b) {
+  function f(uint256 a, uint256 b)
+  {
     if (a == 0)
       require(b <= 100);
     else if (a == 1)
@@ -105,6 +122,7 @@ contract C
 \end{minipage}\hfill
 \begin{minipage}{.48\textwidth}
 $a_0 \ge 0 \land a_0 < 2^{256}  \land \phantom{x}$\\
+$b_0 \ge 0 \land b_0 < 2^{256}  \land \phantom{x}$\\
 $(a_0 = 0) \rightarrow (b_0 \le 100) \, \land$\\
 $b_1 = 1000 \land b_2 = 10000$\\
 $b_3 = ite(a == 1, b_1, b_2) \land \phantom{x}$\\
