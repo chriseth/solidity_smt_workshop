@@ -9,13 +9,12 @@ local variables of functions is cleared before each function of a contract is
 visited.
 
 Inside each function, a variable declaration leads to a correspondent SMT
-variable that is assigned the default value of the declared type (see
-Sec.~\ref{section:solidity}).
+variable that is assigned the default value of the declared type.
 %
 Function parameters are initialized with a range of valid values for the given
-type, if it applies.  For instance, a parameter \code{uint32 x} is initialized
-as $0 \le x < 2^{32}$ (32 bits), and a parameter \code{address a} is assigned
-the range $0 \le a < 2^{(8*20)}$ (20 bytes).
+type, since their value is unknown.  For instance, a parameter \code{uint32 x}
+is initialized as $0 \le x < 2^{32}$ (32 bits), and a parameter \code{address
+a} is assigned the range $0 \le a < 2^{(8*20)}$ (20 bytes).
 %
 The encoding of variable assignment follows the \emph{Single Static Assignment}
 (SSA) where each assignment to a program variable introduces a new SMT variable
@@ -30,20 +29,17 @@ conditions that lead to the piece of code being analyzed: whenever an
 branch's body is encoded and the condition is popped again.
 %
 Similarly, the negation of the condition is pushed onto the stack when visiting
-the \emph{else} branch, and popped afterwards.
+an \emph{else} branch, and popped afterwards.
 %
 Control flow is then encoded using the \emph{if-then-else} operator (ite) as
 the SSA $\phi$ function, with the head of the stack as the condition of the
 if-then-else expression.
-%
-Figure~\ref{figure:control_flow} shows the SMT encoding of a Solidity program
-with emphasis on the control flow handling.
 
 Every arithmetic operation is checked against underflow and overflow according
 to the type of the values, and an example is given if there is an underflow or
 overflow.
 %
-We also check if branch conditions are constant, warning the user about
+We also check whether branch conditions are constant, warning the user about
 unreachable blocks or trivial conditions.
 %
 A \code{require}'s condition is checked for triviality and reachability.
@@ -61,22 +57,73 @@ Solidity programmer wants to ensure at runtime and are verified statically.
 If it is possible to disprove the assertion, the user is given a
 counterexample.
 
+Figure~\ref{figure:solidity_encoding_1} shows a Solidity sample and its SMT
+encoding with emphasis on the control flow handling while verifying an assertion.
+%
+Since variables \code{uint a} and \code{uint b} are function parameters, they
+are initialized with the valid range of values for their type (\code{uint256}).
+%
+The requirement condition about \code{b} is only true if the first condition
+about \code{a} is true.
+%
+The next two assignments to \code{b} create the new SSA variables
+$b_1$ and $b_2$.
+%
+Variable $b_3$ encodes the second and third conditions, and $b_4$
+encodes the first condition.
+%
+Finally, $b_4$ is used in the assertion check.
+%
+Note that the nested control-flow is implicitly encoded in the $ite$
+variables $b_3$ and $b_4$.
+%
+We can see that the target assertion is safe within its function.
+
+\begin{figure}
+\label{figure:solidity_encoding_1}
+\noindent\begin{minipage}{.48\textwidth}
+\begin{verbatim}
+contract C
+{
+  function f(uint a, uint b) {
+    if (a == 0)
+      require(b <= 100);
+    else if (a == 1)
+      b = 1000;
+    else
+      b = 10000;
+    assert(b <= 100000);
+  }
+}
+\end{verbatim}
+\end{minipage}\hfill
+\begin{minipage}{.48\textwidth}
+$a_0 \ge 0 \land a_0 < 2^{256} \land$\\
+$(a_0 = 0) \rightarrow (b_0 \le 100) \land$\\
+$b_1 = 1000 \land b_2 = 10000$\\
+$b_3 = ite(a == 1, b_1, b_2) \land$\\
+$b_4 = ite(a == 0, b_0, b_3) \land$\\
+$\neg b_4 \le 100000$
+\end{minipage}
+\caption{SMT encoding of an assertion check highlighting control-flow.}
+\end{figure}
+
 It is important to highlight that errors are irrelevant if they result in a
 state reversion (Sec.~\ref{section:smart_contracts}). The user is warned
 about checks such as overflow only if they do not result in a state reversion.
 %
 One popular example is the SafeMath~\cite{SafeMath} contract:
 
-\begin{verb}
+\begin{verbatim}
   function add(uint256 a, uint256 b) internal pure returns (uint256) {
     uint256 c = a + b;
     assert(c >= a);
     return c;
-  \}
-\end{verb}
+  }
+\end{verbatim}
 
 Although the tool sees an overflow in the computation of \code{a + b}, since
-both have type $uint256$ which is the largest integer, any execution that
+both have type \code{uint256} which is the largest integer, any execution that
 containts the overflow reverts due to the \code{assert}.
 %
 In this case the user is not warned of the error, since no erroneous cases
