@@ -1,12 +1,16 @@
 \section{Smart Contracts}
 \label{section:smart_contracts}
 
-%Due to space constraints, we will only give a very brief description
-%of smart contracts on Ethereum and leave out some details.
-
 Programs in Ethereum are called \emph{smart contracts}.
-Each smart contract is stored at its \emph{address} with its \emph{code}
-and a key-value store of data (\emph{storage}). The code is fixed after the creation phase
+They can be used to enforce agreements between
+mutually distrusting parties as long as all conditions can be fully formalized
+and do not depend on external factors. Typical use-cases are decentralized
+tokens which can have a currency-like aspect, any mechanisms that build
+on top of these tokens like exchanges and auctions or also decentralized
+tamper-proof registry systems like a domain name system.
+
+Each smart contract has an \emph{address} under which its \emph{code}
+and a key-value store of data (\emph{storage}) is stored. The code is fixed after the creation phase
 and only the smart contract itself can modify the data stored at its address.
 
 Users can interact with a smart contract by sending a \emph{transaction}
@@ -36,16 +40,17 @@ Whenever the EVM encounters an invalid situation (invalid opcode, invalid
 stack access, etc.), execution will not only stop, but all effects on the
 state will be reverted. This reversion takes effect in the current execution
 environment, and the environment will also
-flag a failure to the calling environment, if present. Typically, high level languages
-will cause an invalid situation whenever a call fails and thus the reversion
+flag a failure to the calling environment, if present. Typically,
+when a call fails, high level languages will in turn cause an
+invalid situation in the caller and thus the reversion
 affects the whole transaction.
 
 There is also an explicit opcode that causes the current call to fail, which is
-essentially the same as described above, but as an intended effect.
+essentially the same as described above, but as an \emph{intended} effect.
 
 \todo{Talk about ``all paths that fail eventually revert"}
 
-Very briefly, the SMT encoding assumes that no intended failure happens
+Very briefly, the SMT encoding we will discuss later assumes that no intended failure happens
 and tries to deduct that no unintended failure can occur. This allows the
 programmer to state preconditions using intended failures and postconditions
 using unintended failures.
