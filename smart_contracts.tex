@@ -20,15 +20,23 @@ a new execution environment. Data can be passed and received in calls.
 Furthermore, smart contracts can also create new smart contracts with
 arbitrary code.
 
-\todo{Talk about gas?}
+Since it would otherwise be easy to stall the network by asking it to
+execute a complex task, the resources consumed are metered during execution
+in a unit called \emph{gas}. Each transaction only provides a certain
+amount of gas, and as soon as this \emph{gas limit} is reached without
+prior termination, any effect of the transaction is reverted.
+In every case, the user
+who requested the execution pays for it with Ethereum's native token
+Ether proportionally to the amount of gas consumed.
 
-We would like to highlight a special feature of the Ethereum Virtual Machine
-that makes the control-flow analysis different from other languages.
+A reverting termination can also happen prior to all gas being consumed. This is
+a special feature of the Ethereum Virtual Machine,
+which makes the control-flow analysis different from other languages.
 Whenever the EVM encounters an invalid situation (invalid opcode, invalid
 stack access, etc.), execution will not only stop, but all effects on the
 state will be reverted. This reversion takes effect in the current execution
-environment (i.e.\ roughly a function call), and the environment will also
-flag a failure to the calling environment (if present). Typically, high level languages
+environment, and the environment will also
+flag a failure to the calling environment, if present. Typically, high level languages
 will cause an invalid situation whenever a call fails and thus the reversion
 affects the whole transaction.
 
