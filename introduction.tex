@@ -24,7 +24,7 @@ verification~\cite{Biere99,Donaldson11,Komuravelli13,Beyer11,Kroening14,Alt17}.
 This paper shows how the Solidity compiler, which generates EVM bytecode,
 utilizes an SMT solver and a Bounded Model Checking~\cite{Biere99} approach to
 verify safety properties that can be specified as part of the source code, as
-well as fixed targets such as arithmetic underflow/overflow, and detection of
+well as fixed targets such as arithmetic underflow/overflow, division by zero and detection of
 unreachable code and trivial conditions.
 %
 The main advantage of this system over others for the user is that they do not
