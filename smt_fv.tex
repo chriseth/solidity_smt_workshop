@@ -3,8 +3,13 @@
 
 \subsection{Implemented (or almost there)}
 
+\todo{the transition from the previous section to
+this one is a little rough. Why do we SMT-encode and what
+do we encode?}
+
 The SMT encoding is computed in a top-down way traversing the AST of the
-Solidity program.  The context regarding the SMT solver, contract storage, and
+Solidity program and roughly following the execution order.
+The context regarding the SMT solver, contract storage, and
 local variables of functions is cleared before each function of a contract is
 visited.
 
@@ -24,8 +29,9 @@ The encoder currenty supports \emph{Bool} and the various sizes of
 \emph{Integer} variables.
 
 Because the Solidity code is visited via its AST, we can maintain a stack of
-conditions that lead to the piece of code being analyzed: whenever an
-\emph{if-statement} is visited its condition is pushed onto the stack, the
+conditions that need to be true if and only if control flow
+reaches the piece of code currently being encoded: whenever an
+\emph{if-statement} is visited, its condition is pushed onto the stack, the
 branch's body is encoded and the condition is popped again.
 %
 Similarly, the negation of the condition is pushed onto the stack when visiting
@@ -42,29 +48,31 @@ overflow.
 We also check whether branch conditions are constant, warning the user about
 unreachable blocks or trivial conditions.
 %
-A \code{require}'s condition is checked for triviality and reachability.
+The conditions in calls to \code{assert} represent target postconditions that the
+Solidity programmer wants to ensure at runtime and are verified statically.
 %
-This is important since \code{require} conditions are meant to be used as
+If it is possible to disprove the assertion, the user is given a
+counterexample.
+%
+In contrast, \code{require} conditions are meant to be used as
 filters for unwanted input values when they are unknown, for example, in public
 functions.
 %
 Therefore they act like preconditions for the rest of the scope, implied by the
 conjunction of the conditions from the conditions stack.
 %
-Finally, \code{assert} conditions represent target postconditions that the
-Solidity programmer wants to ensure at runtime and are verified statically.
+Failing calls to \code{require} are not treated as errors and
+are just checked for triviality and reachability.
 %
-If it is possible to disprove the assertion, the user is given a
-counterexample.
 
 Figure~\ref{figure:solidity_encoding_1} shows a Solidity sample and its SMT
 encoding with emphasis on the control flow handling while verifying an assertion.
 %
-Since variables \code{uint a} and \code{uint b} are function parameters, they
+Since the variables \code{uint256 a} and \code{uint256 b} are function parameters, they
 are initialized with the valid range of values for their type (\code{uint256}).
 %
 The requirement condition about \code{b} is only true if the first condition
-about \code{a} is true.
+about \code{a} is true \todo{C: I do not understand this}.
 %
 The next two assignments to \code{b} create the new SSA variables
 $b_1$ and $b_2$.
@@ -85,7 +93,7 @@ We can see that the target assertion is safe within its function.
 \begin{verbatim}
 contract C
 {
-  function f(uint a, uint b) {
+  function f(uint256 a, uint256 b) {
     if (a == 0)
       require(b <= 100);
     else if (a == 1)
@@ -98,11 +106,11 @@ contract C
 \end{verbatim}
 \end{minipage}\hfill
 \begin{minipage}{.48\textwidth}
-$a_0 \ge 0 \land a_0 < 2^{256} \land$\\
-$(a_0 = 0) \rightarrow (b_0 \le 100) \land$\\
+$a_0 \ge 0 \land a_0 < 2^{256}  \land \phantom{x}$\\
+$(a_0 = 0) \rightarrow (b_0 \le 100) \, \land$\\
 $b_1 = 1000 \land b_2 = 10000$\\
-$b_3 = ite(a == 1, b_1, b_2) \land$\\
-$b_4 = ite(a == 0, b_0, b_3) \land$\\
+$b_3 = ite(a == 1, b_1, b_2) \land \phantom{x}$\\
+$b_4 = ite(a == 0, b_0, b_3) \land \phantom{x}$\\
 $\neg b_4 \le 100000$
 \end{minipage}
 \caption{SMT encoding of an assertion check highlighting control-flow.}
