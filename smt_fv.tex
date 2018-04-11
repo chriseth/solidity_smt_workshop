@@ -99,7 +99,7 @@ are just checked for triviality and reachability.
 
 Figure~\ref{figure:solidity_encoding_1} shows on the left a Solidity sample
 that requires all four types of encoding, shown on the right, in order to
-erify the intended properties.
+verify the intended properties.
 %
 Since the variables \code{uint256 a} and \code{uint256 b} are function
 parameters, they are initialized (lines 1 and 2) with the valid range of values
@@ -230,7 +230,15 @@ As we can see, the number of total tokens never changes and the invariant
 $\sum_{a \in balances} balances[a] = 10000$ \todo{fix this, looks ugly} holds
 in the beginning of any function of the contract.
 
-\todo{Modifiers}
+Function \emph{modifiers} are Solidity constructs that are used as patterns to
+change the behavior of functions, and in many cases, to restrict them.
+%
+Commonly used modifiers are, for example, allowing only the owner of the
+contract to execute the function, or executing a function if and only if the
+amount of Ether sent is greater than a certain value.
+%
+We intend to use properties inferred from modifiers as function preconditions,
+therefore improving proving power.
 
 The idea of \emph{Effective Callback Freeness} was recently introduced by
 \cite{Grossman}.
