@@ -22,7 +22,7 @@ Solidity program and roughly following the execution order.
 The context regarding the SMT solver, contract storage, and local variables of
 functions is cleared before each function of a contract is visited.
 %
-There are four types of encoding from Solidity inside each function.
+There are four types of formulas that are encoded from Solidity inside each function.
 %
 Three of them, \emph{Control-flow}, \emph{Type constraint} and \emph{Variable assignment}
 are simply translated as SMT constraints.
@@ -34,14 +34,20 @@ queries the SMT solver for satisfiability.
 The different types of encoding are described below.
 
 \begin{paragraph}{Control-flow.}
-Because the Solidity code is visited via its AST, we can maintain a stack of
-conditions that need to be true if and only if control flow reaches the piece
-of code currently being encoded: whenever an \emph{if-statement} is visited,
+The control-flow constraints are satisfiable if and only if the currently
+processed AST nodes is reachable. In order to handle nested if-statements
+properly, some of them are stored in a stack:
+whenever an \emph{if-statement} is visited,
 its condition is pushed onto the stack, the branch's body is encoded and the
 condition is popped again.
 %
 Similarly, the negation of the condition is pushed onto the stack when visiting
 an \emph{else} branch, and popped afterwards.
+
+Since a failing \code{require} terminates the control flow,
+we add $c \to r$,
+for $c$ being the conjunction of the current constraints and $r$ being
+the argument for $\code{require}$, to the set of constraints bypassing the stack.
 \end{paragraph}
 
 \begin{paragraph}{Type constraint.}
@@ -83,8 +89,8 @@ unreachable blocks or trivial conditions.
 The conditions in calls to \code{assert} represent target postconditions that the
 Solidity programmer wants to ensure at runtime and are verified statically.
 %
-If it is possible to disprove the assertion, the user is given a
-counterexample.
+If it is possible to disprove the assertion provided that the control flow
+can reach it, the user is given a counterexample.
 %
 In contrast, \code{require} conditions are meant to be used as
 filters for unwanted input values when they are unknown, for example, in public
@@ -207,6 +213,9 @@ We intend to build the component as a Bounded Model Checker, unrolling loops
 up to a constant bound and automatically detecting bounds when possible.
 %
 This feature is currently being implemented.
+\todo{I don't think we should be that specific about the
+progress of the project. Earlier we already mentioned things that are
+not yet implemented.}
 
 One of the most interesting aspects we intend to research and support is
 multi-transaction invariants.
@@ -222,12 +231,12 @@ As an example, take contract \code{Token} from Sec.~\ref{section:solidity}.
 We can see from the constructor that the deployer of the contract receives
 10000 tokens.
 %
-The only way to move tokens is via function \code{transfer}, which decreases a
+The only way to move tokens is via the function \code{transfer}, which decreases a
 certain amount of tokens from one account, if it owns enough, and increases the
 same amount in another account.
 %
 As we can see, the number of total tokens never changes and the invariant
-$$\sum_{a \in balances} balances[a] = 10000$$ holds in the beginning of any
+$$\sum_{a \in \mathrm{balances}} \mathrm{balances}[a] = 10000$$ holds in the beginning of any
 function of the contract.
 
 Function \emph{modifiers} are Solidity constructs that are used as patterns to
@@ -243,8 +252,8 @@ therefore improving proving power.
 The idea of \emph{Effective Callback Freeness} was recently introduced by
 \cite{Grossman}.
 %
-A smart contract $C$ is free of callbacks if any external call to another
-contract cannot eventually affect $C's$ storage.
+A smart contract $C$ is effectively callback free, if any state change caused
+by an internal callback can also be caused by an execution that does not have this callback.
 %
 The authors show that most of the contracts deployed on Ethereum have this
 property.
