@@ -47,10 +47,12 @@ affects the whole transaction.
 
 There is also an explicit opcode that causes the current call to fail, which is
 essentially the same as described above, but as an \emph{intended} effect.
+%
+This leads to the important observation that errors might be detected but they
+are only relevant if a path that reaches the error does not lead to the
+transaction being reverted.
 
-\todo{Talk about ``all paths that fail eventually revert"}
-
-Very briefly, the SMT encoding we will discuss later assumes that no intended failure happens
-and tries to deduct that no unintended failure can occur. This allows the
-programmer to state preconditions using intended failures and postconditions
-using unintended failures.
+Very briefly, the SMT encoding we will discuss later assumes that no intended
+failure happens and tries to deduct that no unintended failure can occur. This
+allows the programmer to state preconditions using intended failures and
+postconditions using unintended failures.
