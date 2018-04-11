@@ -14,46 +14,57 @@ program.
 The goal of the translation from Solidity to SMT formulas is to verify safety
 properties from the Solidity program by performing queries to the SMT solver.
 
-\todo{the transition from the previous section to
-this one is a little rough. Why do we SMT-encode and what
-do we encode? ; L: added text above}
-
 \subsection{SMT encoding}
 
 The SMT encoding is computed in a top-down way traversing the AST of the
 Solidity program and roughly following the execution order.
-The context regarding the SMT solver, contract storage, and
-local variables of functions is cleared before each function of a contract is
-visited.
+%
+The context regarding the SMT solver, contract storage, and local variables of
+functions is cleared before each function of a contract is visited.
+%
+There are four types of encoding from Solidity inside each function, presented
+below.
 
-Inside each function, a variable declaration leads to a correspondent SMT
-variable that is assigned the default value of the declared type.
+\begin{paragraph}{Type constraints.}
+A variable declaration leads to a correspondent SMT variable that is assigned
+the default value of the declared type.
+%
+For example, Boolean variables are assigned false, and integer variables are
+assigned 0.
 %
 Function parameters are initialized with a range of valid values for the given
 type, since their value is unknown.  For instance, a parameter \code{uint32 x}
 is initialized as $0 \le x < 2^{32}$ (32 bits), and a parameter \code{address
 a} is assigned the range $0 \le a < 2^{(8*20)}$ (20 bytes).
 %
+The encoder currently supports Boolean and the various sizes of Integer
+variables.
+
+\end{paragraph}
+
+\begin{paragraph}{Variable assignment.}
 The encoding of variable assignment follows the \emph{Single Static Assignment}
 (SSA) where each assignment to a program variable introduces a new SMT variable
 that is assigned to only once.
 %
-The encoder currently supports \emph{Bool} and the various sizes of
-\emph{Integer} variables.
+When a program variable is modified inside a branch block (if-else), the
+\emph{if-then-else} operator (ite) is used as the common SSA $\phi$ function
+associated with the branch condition to create a new SMT variable after the
+branch blocks.
+\end{paragraph}
 
+\begin{paragraph}{Control-flow.}
 Because the Solidity code is visited via its AST, we can maintain a stack of
-conditions that need to be true if and only if control flow
-reaches the piece of code currently being encoded: whenever an
-\emph{if-statement} is visited, its condition is pushed onto the stack, the
-branch's body is encoded and the condition is popped again.
+conditions that need to be true if and only if control flow reaches the piece
+of code currently being encoded: whenever an \emph{if-statement} is visited,
+its condition is pushed onto the stack, the branch's body is encoded and the
+condition is popped again.
 %
 Similarly, the negation of the condition is pushed onto the stack when visiting
 an \emph{else} branch, and popped afterwards.
-%
-Control flow is then encoded using the \emph{if-then-else} operator (ite) as
-the SSA $\phi$ function, with the head of the stack as the condition of the
-if-then-else expression.
+\end{paragraph}
 
+\begin{paragraph}{SMT queries.}
 Every arithmetic operation is checked against underflow and overflow according
 to the type of the values, and an example is given if there is an underflow or
 overflow.
@@ -76,27 +87,26 @@ conjunction of the conditions from the conditions stack.
 %
 Failing calls to \code{require} are not treated as errors and
 are just checked for triviality and reachability.
-%
+\end{paragraph}
 
-Figure~\ref{figure:solidity_encoding_1} shows a Solidity sample and its SMT
-\todo{actually there is not only a single encoding}
-encoding with emphasis on the control flow handling while verifying an assertion.
+Figure~\ref{figure:solidity_encoding_1} shows on the left a Solidity sample
+that requires all four types of encoding, shown on the right, in order to
+erify the intended properties.
 %
-Since the variables \code{uint256 a} and \code{uint256 b} are function parameters, they
-are initialized with the valid range of values for their type (\code{uint256}).
+Since the variables \code{uint256 a} and \code{uint256 b} are function
+parameters, they are initialized (lines 1 and 2) with the valid range of values
+for their type (\code{uint256}).
 %
 If \code{a = 0}, the \code{require} condition about \code{b} is used as a
-precondition when verifying the assertion in the end of the function.
-\todo{C: I do
-not understand this; L: maybe better now?}.
+precondition when verifying the assertion in the end of the function (line 3).
 %
 The next two assignments to \code{b} create the new SSA variables
-$b_1$ and $b_2$.
+$b_1$ and $b_2$ (line 4).
 %
 Variable $b_3$ encodes the second and third conditions, and $b_4$
-encodes the first condition.
+encodes the first condition (lines 5 and 6).
 %
-Finally, $b_4$ is used in the assertion check.
+Finally, $b_4$ is used in the assertion check (line 7).
 %
 Note that the nested control-flow is implicitly encoded in the $ite$
 variables $b_3$ and $b_4$.
@@ -123,15 +133,15 @@ contract C
 \end{verbatim}
 \end{minipage}\hfill
 \begin{minipage}{.48\textwidth}
-$a_0 \ge 0 \land a_0 < 2^{256}  \land \phantom{x}$\\
-$b_0 \ge 0 \land b_0 < 2^{256}  \land \phantom{x}$\\
-$(a_0 = 0) \rightarrow (b_0 \le 100) \, \land$\\
-$b_1 = 1000 \land b_2 = 10000$\\
-$b_3 = ite(a == 1, b_1, b_2) \land \phantom{x}$\\
-$b_4 = ite(a == 0, b_0, b_3) \land \phantom{x}$\\
-$\neg b_4 \le 100000$
+1. $a_0 \ge 0 \land a_0 < 2^{256}  \land \phantom{x}$\\
+2. $b_0 \ge 0 \land b_0 < 2^{256}  \land \phantom{x}$\\
+3. $(a_0 = 0) \rightarrow (b_0 \le 100) \, \land$\\
+4. $b_1 = 1000 \land b_2 = 10000$\\
+5. $b_3 = ite(a == 1, b_1, b_2) \land \phantom{x}$\\
+6. $b_4 = ite(a == 0, b_0, b_3) \land \phantom{x}$\\
+7. $\neg b_4 \le 100000$
 \end{minipage}
-\caption{SMT encoding of an assertion check highlighting control-flow.}
+\caption{SMT encoding of an assertion check.}
 \end{figure}
 
 It is important to highlight that errors are irrelevant if they result in a
@@ -212,7 +222,7 @@ certain amount of tokens from one account, if it owns enough, and increases the
 same amount in another account.
 %
 As we can see, the number of total tokens never changes and the invariant
-$\sum_{a \in balances} balances[a] = 10000$ holds in the beginning of any
+$\sum_{a \in balances} balances[a] = 10000$ \todo{fix this, looks ugly} holds in the beginning of any
 function of the contract.
 
 The idea of \emph{Effective Callback Freeness} was recently introduced by
