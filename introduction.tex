@@ -27,7 +27,7 @@ verify safety properties that can be specified as part of the source code, as
 well as fixed targets such as arithmetic underflow/overflow, division by zero and detection of
 unreachable code and trivial conditions.
 %
-The main advantage of this system over others for the user is that they do not
+For the user, the main advantage of this system over others is that they do not
 need to learn a second verification language or how to use any new tools, since
 verification is part of the compilation process.
 %
@@ -38,23 +38,20 @@ verify at compile-time that the asserted conditions hold for any input,
 assuming the given requirements.
 
 Sec.~\ref{section:smart_contracts} introduces the EVM and smart contracts.
-Sec.~\ref{section:solidity} gives a very brief overview of Solidity,
-the high-level language for smart
-contracts. Sec.~\ref{section:smt} discusses the translation from Solidity to SMT
+Sec.~\ref{section:solidity} gives a very brief overview of Solidity. Sec.~\ref{section:smt} discusses the translation from Solidity to SMT
 statements and next challenges. Finally, Sec.~\ref{section:conclusion}
 contains our concluding remarks.
 
 \begin{paragraph}{Related work.}
-Oyente~\cite{Luu2016} and Mythril~\cite{Mythril} are SMT-based symbolic
-\todo{there are at least two other porjects to mention, I will check}
+Oyente~\cite{Luu2016}, Mythril~\cite{Mythril} and MAIAN~\cite{NKSSH18} are SMT-based symbolic
 execution tools for EVM bytecode that check for specific known vulnerabilities,
-where the former also checks for assertion fails. They simulate the virtual
+where Oyente also checks for assertion fails. They simulate the virtual
 machine and execute all possible paths, which takes a performance toll even
 though the approach works well for simple programs.
-%
-Solidity has been partially translated to the frameworks Why3~\cite{Why3}\todo{We should also cite the documentation} and
-F*~\cite{Bhargavan2016}, but the former requires learning a new annotation
-specification language and the latter only verifies fixed vulnerability
-patterns and does not verify custom user-provided assertions.
+
+Subsets of Solidity have been translated to Why3~\cite{Why3},
+F*~\cite{Bhargavan2016} and LLVM~\cite{ZEUS}, but the first requires learning a new annotation
+specification language and the latter two only verify fixed vulnerability
+patterns and do not verify custom user-provided assertions.
 
 \end{paragraph}
