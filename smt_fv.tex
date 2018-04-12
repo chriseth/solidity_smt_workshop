@@ -16,11 +16,13 @@ properties from the Solidity program by performing queries to the SMT solver.
 
 \subsection{SMT encoding}
 
-The SMT encoding is computed in a top-down way traversing the AST of the
-Solidity program and roughly following the execution order.
+The SMT encoding is computed during a depth-first traversal of the
+abstract syntax tree (AST) of the
+Solidity program and thus roughly follows the execution order.
 %
-The context regarding the SMT solver, contract storage, and local variables of
-functions is cleared before each function of a contract is visited.
+For now, each function is analyzed in isolation and thus the 
+context regarding the SMT solver (contract storage, local variables, etc.)
+is cleared before each function of a contract is visited.
 %
 There are four types of formulas that are encoded from Solidity inside each function.
 %
@@ -34,27 +36,33 @@ queries the SMT solver for satisfiability.
 The different types of encoding are described below.
 
 \begin{paragraph}{Control-flow.}
-The control-flow constraints are satisfiable if and only if the currently
-processed AST nodes is reachable. In order to handle nested if-statements
-properly, some of them are stored in a stack:
-whenever an \emph{if-statement} is visited,
-its condition is pushed onto the stack, the branch's body is encoded and the
-condition is popped again.
-%
-Similarly, the negation of the condition is pushed onto the stack when visiting
-an \emph{else} branch, and popped afterwards.
+Since control-flow does not have to be monotonous, we cannot just
+add constraints while traversing the AST. We will define a set of
+control-flow constraints which are satisfiable if and only if
+the Solidity statement currently under consideration is reachable.
+Let $R_\mathrm{pre}(s)$ be the constraint set to reach the statement
+$s$ and $R_\mathrm{post}(s)$ be the constraint set for control-flow
+going past $n$. Naturally, $R_\mathrm{post}(s) = R_\mathrm{pre}(t)$
+if $t$ follows $s$. Also, $R_\mathrm{post}(s) = R_\mathrm{pre}(s)$
+for a regular statement $s$.
 
-Since a failing \code{require} terminates the control flow,
-we add $c \to r$,
-for $c$ being the conjunction of the current constraints and $r$ being
-the argument for $\code{require}$, to the set of constraints bypassing the stack.
+For $s$ being \code{require($r$)} (and similar for \code{assert($r$)}),
+control flow terminates if $r$ evaluates to $\mathrm{false}$,
+and thus $R_\mathrm{post}(s) = R_\mathrm{pre}(s) \land r$.
+
+For $s$ being \code{if ($c$) $T$ else $F$},
+we have $R_\mathrm{pre}(T) = R_\mathrm{pre}(s) \land c$ and
+$R_\mathrm{pre}(F) = R_\mathrm{pre}(s) \land \neg c$.
+Finally, $R_\mathrm{post}(s) = R_\mathrm{post}(T) \lor R_\mathrm{post}(F)$.
+
+The implementation utilizes a stack to realize if-statements.
 \end{paragraph}
 
 \begin{paragraph}{Type constraint.}
 A variable declaration leads to a correspondent SMT variable that is assigned
 the default value of the declared type.
 %
-For example, Boolean variables are assigned false, and integer variables are
+For example, Boolean variables are assigned $\mathrm{false}$, and integer variables are
 assigned 0.
 %
 Function parameters are initialized with a range of valid values for the given
