@@ -24,38 +24,37 @@ For now, each function is analyzed in isolation and thus the
 context regarding the SMT solver (contract storage, local variables, etc.)
 is cleared before each function of a contract is visited.
 %
-There are four types of formulas that are encoded from Solidity inside each function.
+There are five types of formulas that are encoded from Solidity inside each function.
 %
 Three of them, \emph{Control-flow}, \emph{Type constraint} and \emph{Variable assignment}
 are simply translated as SMT constraints.
 %
+The \emph{Branch conditions} are the conditions of the current branch of
+execution and thus grow and shrink as we traverse the AST.
+%
 The last, \emph{Verification Target}, creates a formula consisting of the
-verification goal conjoined with the previously mentioned constraints, and
+verification goal conjoined with the previously mentioned constraints,
+including the current branch conditions, and
 queries the SMT solver for satisfiability.
 %
 The different types of encoding are described below.
 
+\begin{paragraph}{Branch conditions.}
+For an if-statement \code{if ($c$) $T$ else $F$}, we add
+$c$ to the branch conditions during the visit of $T$.
+After that, we replace $c$ by $\neg c$
+for the visit of $F$ and also remove that when we are
+finished with the if-statement.
+\end{paragraph}
+  
 \begin{paragraph}{Control-flow.}
-Since control-flow does not have to be monotonous, we cannot just
-add constraints while traversing the AST. We will define a set of
-control-flow constraints which are satisfiable if and only if
-the Solidity statement currently under consideration is reachable.
-Let $R_\mathrm{pre}(s)$ be the constraint set to reach the statement
-$s$ and $R_\mathrm{post}(s)$ be the constraint set for control-flow
-going past $n$. Naturally, $R_\mathrm{post}(s) = R_\mathrm{pre}(t)$
-if $t$ follows $s$. Also, $R_\mathrm{post}(s) = R_\mathrm{pre}(s)$
-for a regular statement $s$.
-
-For $s$ being \code{require($r$)} (and similar for \code{assert($r$)}),
-control flow terminates if $r$ evaluates to $\mathrm{false}$,
-and thus $R_\mathrm{post}(s) = R_\mathrm{pre}(s) \land r$.
-
-For $s$ being \code{if ($c$) $T$ else $F$},
-we have $R_\mathrm{pre}(T) = R_\mathrm{pre}(s) \land c$ and
-$R_\mathrm{pre}(F) = R_\mathrm{pre}(s) \land \neg c$.
-Finally, $R_\mathrm{post}(s) = R_\mathrm{post}(T) \lor R_\mathrm{post}(F)$.
-
-The implementation utilizes a stack to realize if-statements.
+These constraints model conditional termination of execution.
+A \code{require($r$)} statement (and similar for \code{assert($r$)})
+terminates execution if $r$ evaluates to $\mathrm{false}$, but
+of course only if it is executed. Thus,
+we add a constraint $b \to r$, where $b$ is the conjunction of
+the current branch conditions. Note that due to the implication,
+we can keep this constraint even when we leave the current branch.
 \end{paragraph}
 
 \begin{paragraph}{Type constraint.}
@@ -80,10 +79,13 @@ The encoding of variable assignment follows the \emph{Single Static Assignment}
 (SSA) where each assignment to a program variable introduces a new SMT variable
 that is assigned to only once.
 %
-When a program variable is modified at a place that is executed only
-conditionally (if-else), the \emph{if-then-else} operator (ite) is used as the
-common SSA $\phi$ function associated with the branch condition to create a new
-SMT variable after the branch blocks.
+When a program variable is modified inside different branches of execution,
+a new variable is created after the branch to re-combine the different
+values after the branches.
+We use the if-then-else-function \code{ite} to assign the value
+\code{ite(c, $x_1$, $x_2$)} (if-then-else), where $c$ is the branch
+condition and $x_1$ and $x_2$ are the two SSA variables corresponding to $x$
+at the ends of the branches (cf.\ the $\phi$ function in SSA).
 \end{paragraph}
 
 \begin{paragraph}{Verification target.}
@@ -98,16 +100,12 @@ The conditions in calls to \code{assert} represent target postconditions that th
 Solidity programmer wants to ensure at runtime and are verified statically.
 %
 If it is possible to disprove the assertion provided that the control flow
-can reach it, the user is given a counterexample.
+can reach it (i.e.\ the current branch conditions are satisfiable),
+the user is given a counterexample.
 %
 In contrast, \code{require} conditions are meant to be used as
 filters for unwanted input values when they are unknown, for example, in public
-functions.
-%
-Therefore they act like preconditions for the rest of the scope, implied by the
-conjunction of the conditions from the conditions stack.
-%
-Failing calls to \code{require} are not treated as errors and
+functions. Therefore, failing calls to \code{require} are not treated as errors and
 are just checked for triviality and reachability.
 \end{paragraph}
 
